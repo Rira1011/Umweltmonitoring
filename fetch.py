@@ -1,6 +1,5 @@
 import requests
 import pandas as pd
-import pandas as pd
 from config import sensebox, datenbank
 import procesing
 from datetime import datetime
@@ -50,13 +49,29 @@ def update_db(df):
 
         cur = conn.cursor()
 
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS sensebox (
+                createdAt TIMESTAMPTZ PRIMARY KEY,
+                Luftdruck FLOAT,
+                Temperatur FLOAT,
+                UVIntensität FLOAT,
+                relLuftfeuchte FLOAT
+            );
+            """)
+        conn.commit()
+
         for index, row in tqdm(df.iterrows(), total=df.shape[0], desc="updating rows"):
             sql = """
-            UPDATE sensebox
-            SET Luftdruck = %s, Temperatur = %s, UVIntensität = %s, relLuftfeuchte = %s
-            WHERE createdAt = %s;
+            INSERT INTO sensebox (createdAt, Luftdruck, Temperatur, UVIntensität, relLuftfeuchte)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (createdAt) DO UPDATE
+            SET Luftdruck = EXCLUDED.Luftdruck,
+                Temperatur = EXCLUDED.Temperatur,
+                UVIntensität = EXCLUDED.UVIntensität,
+                relLuftfeuchte = EXCLUDED.relLuftfeuchte;
             """
-            values = (row['Luftdruck'], row['Temperatur'], row["UV-Intensität"], row["rel. Luftfeuchte"], row['createdAt'])
+            values = (pd.to_datetime(row["createdAt"]).strftime('%Y-%m-%d %H:%M'),\
+                      row['Luftdruck'], row['Temperatur'], row['UV-Intensität'], row['rel. Luftfeuchte'])
             cur.execute(sql, values)
 
         conn.commit()
@@ -69,6 +84,6 @@ def update_db(df):
 
 
 if __name__ == "__main__":
-    data = procesing.clean_data(fetch_sensebox_data())
+    data = fetch_sensebox_data()
     export_to_csv(data)
-    update_db(data)
+    update_db(procesing.clean_data(data))
