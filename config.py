@@ -18,6 +18,10 @@ class sensebox():
     'outliers': 'mark',          
     'outlier-window': 15,        
     }
+    STATION_LOCATION = {
+    "latitude": 49.001548,
+    "longitude": 8.410042,
+    }
 
 
 @dataclass(frozen=True)

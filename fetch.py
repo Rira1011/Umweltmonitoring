@@ -6,13 +6,54 @@ from datetime import datetime
 import psycopg2
 from tqdm import tqdm
 
+def get_latest_timestamp():
+    """Retrieve the latest timestamp from the database."""
+    try:
+        conn = psycopg2.connect(
+            host=datenbank.HOSTNAME,
+            dbname=datenbank.DBNAME,
+            user=datenbank.USER,
+            password=datenbank.PASSWORD,
+            port=datenbank.PORT
+        )
+        cur = conn.cursor()
+        cur.execute("SELECT MAX(createdAt) FROM sensebox;")
+        latest_timestamp = cur.fetchone()[0]
+        cur.close()
+        conn.close()
+        return latest_timestamp
+    except Exception as error:
+        print("Error retrieving latest timestamp:", error)
+        return None
 
-def fetch_sensebox_data():
+
+def fetch_sensebox_data(from_date=None):
+    conn = psycopg2.connect(
+            host=datenbank.HOSTNAME,
+            dbname=datenbank.DBNAME,
+            user=datenbank.USER,
+            password=datenbank.PASSWORD,
+            port=datenbank.PORT
+        )
+    cur = conn.cursor()
+    cur.execute("SELECT MAX(createdAt) FROM sensebox;")
+    latest_timestamp = cur.fetchone()[0]
+    cur.close()
+    conn.close() 
+    PARAMS = {
+        'format': 'json',
+        'download': 'true',
+        'outliers': 'mark',
+        'outlier-window': 15,
+    }
+    if from_date:
+        PARAMS['from-date'] = from_date
+        
     all_data = []
     print("requesting new data...")
     for sensorId in sensebox.SENSOR_INFO.keys():
         endpoint = f'{sensebox.BASE_URL}/{sensebox.SENSEBOX_ID}/data/{sensorId}'
-        response = requests.get(endpoint, params=sensebox.PARAMS)
+        response = requests.get(endpoint, params=PARAMS)
         
         if response.status_code == 200:
             data = response.json()
@@ -77,13 +118,16 @@ def update_db(df):
         conn.commit()
         cur.close()
         conn.close()
-        print("update was sucessful")
+        print("update was successful")
 
     except Exception as error:
         print("update failed:", error)
 
 
 if __name__ == "__main__":
-    data = fetch_sensebox_data()
-    export_to_csv(data)
+    from_date = datetime.fromisoformat(str(get_latest_timestamp())).strftime('%Y-%m-%dT%H:%M:%SZ')
+    # data = fetch_sensebox_data(from_date=from_date)
+    # export_to_csv(data)
+    data = pd.read_csv('/Users/rafaelriesle/Downloads/Umweltmonitoring/data/sensor_data_2024-05-27.csv')
     update_db(procesing.clean_data(data))
+
