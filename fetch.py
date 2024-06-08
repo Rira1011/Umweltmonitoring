@@ -126,8 +126,7 @@ def update_db(df):
 
 if __name__ == "__main__":
     from_date = datetime.fromisoformat(str(get_latest_timestamp())).strftime('%Y-%m-%dT%H:%M:%SZ')
-    # data = fetch_sensebox_data(from_date=from_date)
-    # export_to_csv(data)
-    data = pd.read_csv('/Users/rafaelriesle/Downloads/Umweltmonitoring/data/sensor_data_2024-05-27.csv')
+    data = fetch_sensebox_data(from_date=from_date)
+    export_to_csv(data)
     update_db(procesing.clean_data(data))
 
