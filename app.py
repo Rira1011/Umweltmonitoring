@@ -1,14 +1,8 @@
 import dash
-from dash import html, dcc, callback, Output, Input, dash_table
+from dash import html, dcc, Output, Input
 import dash_bootstrap_components as dbc
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import pandas as pd
 import procesing
 from datetime import datetime
-import psycopg2
-from tqdm import tqdm
 from fetch import get_latest_timestamp, fetch_sensebox_data, update_db
 
 

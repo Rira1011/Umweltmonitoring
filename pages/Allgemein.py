@@ -1,14 +1,8 @@
 import dash
 from dash import dcc, html, callback, Output, Input
-import plotly.express as px
-import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
-import psycopg2
-import pandas as pd
-import sqlalchemy
 from config import sensebox
-import fetch
-from functions import get_data_from_postgres, neural_prophet_forecast
+from functions import get_data_from_postgres
 
 dash.register_page(__name__, path="/", name="Allgemein")  # '/' is home page
 

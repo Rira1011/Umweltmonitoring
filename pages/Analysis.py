@@ -1,12 +1,6 @@
 import dash
-import plotly.graph_objs as go
-import pandas as pd
-import plotly.express as px
-import psycopg2
 from dash import dcc, html, callback, Output, Input, dash_table
 import dash_bootstrap_components as dbc
-import sqlalchemy
-from config import datenbank
 from functions import get_data_from_postgres, create_figure, correlation_heatmap
 
 dash.register_page(__name__, name="Analysis")    

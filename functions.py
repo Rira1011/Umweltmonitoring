@@ -1,12 +1,10 @@
 import plotly.express as px
-from config import datenbank,sensebox
+import plotly.graph_objs as go
+from config import datenbank
 from neuralprophet import NeuralProphet
 import sqlalchemy
-import plotly.graph_objs as go
 import pandas as pd
-from datetime import datetime, timedelta, timezone
-import pickle
-import os
+from datetime import datetime, timedelta
 
 
 
@@ -26,7 +24,7 @@ def get_data_from_postgres():
     
 
 #Forcasting  
-def neural_prophet_forecast(df, time_column, target_column, yaxis_title, periods=480, freq='T', epochs=40):
+def neural_prophet_forecast(df, time_column, target_column, yaxis_title, periods=480, freq='min', epochs=40):
     data = df[[time_column, target_column]]  
     data.columns = ['ds', 'y']  
     
@@ -132,6 +130,7 @@ def create_figure(df, x, y, title, y_title, y2=None, second_y_title=None):
 
 # Funktion zum Erstellen einer Korrelations-Heatmap
 def correlation_heatmap(df):
-    fig = go.Figure(data=go.Heatmap(z=df.corr(), x=df.columns, y=df.columns, colorscale='RdBu_r'))
+    df = df.drop(columns="createdat").corr()
+    fig = go.Figure(data=go.Heatmap(z=df, x=df.columns, y=df.columns, colorscale='RdBu_r'))
     fig.update_layout(title="Korrelationsmatrix", xaxis_title="Variablen", yaxis_title="Variablen")
     return fig
