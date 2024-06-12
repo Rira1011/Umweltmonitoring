@@ -1,3 +1,5 @@
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 import dash
 from dash import html, dcc, Output, Input
 import dash_bootstrap_components as dbc

@@ -1,8 +1,9 @@
 import plotly.express as px
 import plotly.graph_objs as go
-from config import datenbank
+from config import datenbank, sensebox
 from neuralprophet import NeuralProphet
 import sqlalchemy
+import requests
 import pandas as pd
 from datetime import datetime, timedelta
 
@@ -134,3 +135,27 @@ def correlation_heatmap(df):
     fig = go.Figure(data=go.Heatmap(z=df, x=df.columns, y=df.columns, colorscale='RdBu_r'))
     fig.update_layout(title="Korrelationsmatrix", xaxis_title="Variablen", yaxis_title="Variablen")
     return fig
+
+# Funktion zum Abrufen der letzten Messung eines Sensors
+def get_last_measurement(sensor_id):
+    sensor_url = f"{sensebox.BASE_URL}/{sensebox.SENSEBOX_ID}/sensors/{sensor_id}"
+    response = requests.get(sensor_url)
+    if response.status_code == 200:
+        sensor_data = response.json()
+        last_measurement = sensor_data.get('lastMeasurement', {})
+        return last_measurement.get('value')
+    else:
+        print(f"Fehler bei der Abfrage des Sensors {sensor_id}: {response.status_code}")
+        return None
+
+def create_last_measurement_data():
+    data = {'Sensor': [], 'Wert': [], 'Einheit': []}
+    for sensor_id, sensor_info in sensebox.SENSOR_INFO.items():
+        last_value = get_last_measurement(sensor_id)
+        if last_value is not None:
+            data['Sensor'].append(sensor_info['name'])
+            data['Wert'].append(last_value)
+            data['Einheit'].append(sensor_info['unit'])
+    # DataFrame erstellen
+    df = pd.DataFrame(data)
+    return df
