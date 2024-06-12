@@ -1,16 +1,16 @@
 import dash
-from dash import dcc, html, callback, Output, Input
+from dash import dcc, html, callback, Output, Input, dash_table
 import plotly.graph_objects as go
 from config import sensebox
-from functions import get_data_from_postgres
+from functions import get_data_from_postgres, create_last_measurement_data
 
 dash.register_page(__name__, path="/", name="Allgemein")  # '/' is home page
 
 df = get_data_from_postgres()
 # Annahmen für fehlende Variablen
 measurements = len(df)
-
-
+# letzter Messpunkt
+last_measurement = create_last_measurement_data()
 
 # Erstellen der Karte
 map_figure = go.Figure(
@@ -33,24 +33,19 @@ map_figure.update_layout(
     ),
 )
 
-
-
-
-
 # Combined layout
 layout = html.Div(
     id="main-content",
     style={
-        "width": "50%",  # Breite des Hauptinhalts
-        "margin": "auto",  # Zentrieren des Inhalts horizontal
-        "textAlign": "center",  # Zentrieren des Textes
-        "padding": "15px",  # Abstand um den Inhalt herum
-        "position": "absolute",  # Position absolut
-        "top": "75%",  # 
-        "left": "50%",  # Von links 50% entfernt
-        "transform": "translate(-50%, -50%)",  # Zentrieren des Inhalts
+        "width": "50%",
+        "margin": "auto",
+        "textAlign": "center",
+        "padding": "15px",
+        "position": "absolute",
+        "top": "75%",
+        "left": "50%",
+        "transform": "translate(-50%, -50%)",
     },
-    # Einleitungstext
     children=[
         html.H2("Sommersemester 24 Projektarbeit"),
         html.P(
@@ -62,24 +57,20 @@ layout = html.Div(
                werden als Ausreißer gekennzeichnet, um Probleme im Datensatz
                für das Machine-Learning-Modell zu vermeiden."""
         ),
-        # Infos über die Messung
         html.Div(id='measurement-info', children=[
             html.P([html.B("Measurements: "), html.Span(id="measurements-text")])
         ]),
-        html.P([html.B("Sensoren: ")]),
-       html.Ul([
-            html.P(f"• {sensebox.SENSOR_INFO[sensor_id]['name']} ({sensebox.SENSOR_INFO[sensor_id]['unit']})")
-            for sensor_id in sensebox.SENSOR_INFO.keys()
+        html.P([html.B("Aktuelle Messwerte")]),
+        html.Div(id='sensor-table-container', children=[
+            dash_table.DataTable(last_measurement.to_dict('records'), columns=[{"name": i, "id": i} for i in last_measurement.columns])
         ]),
-        # Map
         html.Div(
             dcc.Graph(
                 id="map-graph",
-                figure=map_figure,
+                figure=map_figure,  
                 style={"width": "100%", "height": "auto", "margin": "auto"},
             )
         ),
-        # Bild und Link zur Station
         html.Div(
             [
                 html.P("Hier ist der Link zur Station"),
@@ -87,9 +78,9 @@ layout = html.Div(
                     "Opensensemap",
                     href="https://opensensemap.org/explore/6645db6eeb5aad0007a6e4b6",
                 ),
-                html.Br(),  
+                html.Br(),
                 html.Img(
-                    src="https://cdn.book-family.de/petbook/data/uploads/2022/07/gettyimages-667300283.jpg?impolicy=channel&imwidth=992",
+                    src="https://sensebox.de/images/logos/sensebox_wort_logo.svg",
                     style={"width": "50%", "height": "auto", "margin": "auto"},
                 ),
             ]
@@ -97,17 +88,24 @@ layout = html.Div(
         html.P("Ein Projekt von Evelyn, Alex und Rafael"),
         dcc.Interval(
             id='interval-component',
-            interval=10*1000, 
+            interval=60*1000, 
             n_intervals=0
         )
     ],
 )
 
 @callback(
-    [Output("measurements-text", "children")],
-    [Input("interval-component", "n_intervals")]
-)
+    [Output("measurements-text", "children"),
+     Output("sensor-table-container", "children")],
+    [Input("interval-component", "n_intervals")])
+    
 def update_measurement_info(n):
+    last_measurement = create_last_measurement_data()
+    
+    # Aktualisierte Daten für die Tabelle
+    table_data = last_measurement.to_dict('records')
+    columns = [{"name": i, "id": i} for i in last_measurement.columns]
     df = get_data_from_postgres()
     measurements = len(df)
-    return [f"{measurements}"]
+    return f"{measurements}", dash_table.DataTable(data=table_data, columns=columns)
+
