@@ -18,6 +18,8 @@ Dieses Projekt dient zur Überwachung von Umweltparametern mithilfe einer SenseB
 
 - **Analysis**: Seite der Dash-Anwendung zur Datenanalyse, einschließlich Zeitreihenanalyse und Korrelationsanalyse.
 
+- **Allgemein**: Erste Seite der Dash-Anwendung mit allgemeinen Informationen 
+
 ## Nutzung
 
 1. Stellen Sie sicher, dass alle Abhängigkeiten installiert sind, indem Sie `pip install -r requirements.txt` ausführen.

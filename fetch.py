@@ -6,9 +6,16 @@ from datetime import datetime
 import psycopg2
 from tqdm import tqdm
 
+# Neuester Zeitstempel -> um beim nächsten Abruf nur die neuen Daten seit diesem Zeitstempel zu holen
 def get_latest_timestamp():
-    """Retrieve the latest timestamp from the database."""
+    """
+    Holt den neuesten Zeitstempel aus der Datenbank
+
+    Returns:
+        datetime oder None: Der neueste Zeitstempel oder None bei Fehler
+    """
     try:
+        # Verbindung zur Datenbank herstellen
         conn = psycopg2.connect(
             host=datenbank.HOSTNAME,
             dbname=datenbank.DBNAME,
@@ -22,12 +29,24 @@ def get_latest_timestamp():
         cur.close()
         conn.close()
         return latest_timestamp
+    
     except Exception as error:
         print("Error retrieving latest timestamp:", error)
         return None
 
 
 def fetch_sensebox_data(from_date=None):
+    """
+    Holt Daten von der SenseBox-API und gibt diese als DataFrame zurück
+
+    Parameters:
+        from_date (str, optional): Optionales Startdatum für den Datenabruf 
+
+    Returns:
+        DataFrame mit den abgerufenen Sensordaten
+    """
+
+    # Verbindung zur Datenbank herstellen
     conn = psycopg2.connect(
             host=datenbank.HOSTNAME,
             dbname=datenbank.DBNAME,
@@ -39,7 +58,8 @@ def fetch_sensebox_data(from_date=None):
     cur.execute("SELECT MAX(createdAt) FROM sensebox;")
     latest_timestamp = cur.fetchone()[0]
     cur.close()
-    conn.close() 
+    conn.close()
+
     PARAMS = {
         'format': 'json',
         'download': 'true',
@@ -51,12 +71,16 @@ def fetch_sensebox_data(from_date=None):
         
     all_data = []
     print("requesting new data...")
+
+    # Für jeden Sensor die Daten abrufen
     for sensorId in sensebox.SENSOR_INFO.keys():
         endpoint = f'{sensebox.BASE_URL}/{sensebox.SENSEBOX_ID}/data/{sensorId}'
         response = requests.get(endpoint, params=PARAMS)
         
         if response.status_code == 200:
             data = response.json()
+
+            # Daten verarbeiten
             for measurement in data:
                 measurement['Id'] = sensorId
                 if 'outlier' in measurement:
@@ -73,13 +97,26 @@ def fetch_sensebox_data(from_date=None):
 
 # Zur Sicherheit die Daten als CSV speichern
 def export_to_csv(df):
+    """
+    Exportiert den gegebenen DataFrame als CSV-Datei
+    
+    Parameters:
+        DataFrame, der als CSV gespeichert werden soll
+    """
     print("exporting to csv...")
     df.to_csv(f"data/sensor_data_{datetime.now().date()}.csv")
 
 
 def update_db(df):
+    """
+    Aktualisiert die Tabelle in der Datenbank
+    
+    Parameters:
+        DataFrame, der die neuen Sensordaten enthält.
+    """
     try:
         print("updating db table...")
+        # Verbindung zur Datenbank herstellen
         conn = psycopg2.connect(
             host= datenbank.HOSTNAME,
             dbname= datenbank.DBNAME,
@@ -112,7 +149,11 @@ def update_db(df):
                 relLuftfeuchte = EXCLUDED.relLuftfeuchte;
             """
             values = (pd.to_datetime(row["createdAt"]).strftime('%Y-%m-%d %H:%M'),\
-                      row['Luftdruck'], row['Temperatur'], row['UV-Intensität'], row['rel. Luftfeuchte'])
+                      row['Luftdruck'], 
+                      row['Temperatur'], 
+                      row['UV-Intensität'], 
+                      row['rel. Luftfeuchte']
+                      )
             cur.execute(sql, values)
 
         conn.commit()

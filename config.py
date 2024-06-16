@@ -1,6 +1,8 @@
 from dataclasses import  dataclass
 
+# definiert zentrale Konfigurationsvariablen für die Anwendung
 
+# Dataclass für sensebox-Konfigurationen
 @dataclass(frozen=True)
 class sensebox():
     BASE_URL = "https://api.opensensemap.org/boxes"
@@ -23,7 +25,7 @@ class sensebox():
     "longitude": 8.410042,
     }
 
-
+# Dataclass für Datenbankverbindung
 @dataclass(frozen=True)
 class datenbank():
     HOSTNAME = '35.192.180.193'

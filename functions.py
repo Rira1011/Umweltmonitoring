@@ -7,10 +7,14 @@ import requests
 import pandas as pd
 from datetime import datetime, timedelta
 
-
-
-# Verbindung zur Datenbank herstellen und Daten laden
 def get_data_from_postgres():
+    """
+    Stellt Verbindung zur Datenbank her, ladet und verarbeitet die Daten
+    
+    Returns:
+        DataFrame mit den interpolierten Daten
+    """
+
     # SQLAlchemy engine erstellen
     engine = sqlalchemy.create_engine(f"postgresql://{datenbank.USER}:{datenbank.PASSWORD}@{datenbank.HOSTNAME}:{datenbank.PORT}/{datenbank.DBNAME}")
     try:
@@ -24,8 +28,23 @@ def get_data_from_postgres():
         return pd.DataFrame() 
     
 
-#Forcasting  
 def neural_prophet_forecast(df, time_column, target_column, yaxis_title, periods=480, freq='min', epochs=40):
+    """
+    Erstellt eine Vorhersage auf Basis historischer Daten und visualisiert sie
+
+    Parameters:
+        df: DataFrame mit historischen Daten
+        time_column (str): Spaltenname der Zeitdaten
+        target_column (str): Spaltenname des Labels
+        yaxis_title (str): Titel der y-Achse im Plot
+        periods (int, optional): Anzahl der vorherzusagenden Zeitpunkte, Standard ist 480
+        freq (str, optional): Frequenz der Zeitdaten, Standard ist min
+        epochs (int, optional): Anzahl der Trainingsdurchläufe für das Modell, Standard ist 40
+
+    Returns:
+        Plotly-Objekt, das die historischen Daten und die Vorhersage anzeigt
+    """
+
     data = df[[time_column, target_column]]  
     data.columns = ['ds', 'y']  
     
@@ -33,25 +52,22 @@ def neural_prophet_forecast(df, time_column, target_column, yaxis_title, periods
     m = NeuralProphet(batch_size = 254, weekly_seasonality=True)
     m.fit(data, freq=freq, epochs=epochs)  
     
-    # dataframe for forecasting
     future = m.make_future_dataframe(data, periods=periods)  
-    
-    # predictions
     forecast = m.predict(future)
     
     fig = go.Figure()
     
-    # Historical data
+    # Visualierisung historische Daten
     fig.add_trace(go.Scatter(x=data['ds'], y=data['y'], mode='lines', name='Historical Data'))
     
-    # Forecast
+    # Visualisierung Vorhersage
     fig.add_trace(go.Scatter(x=forecast['ds'], y=forecast['yhat1'], mode='lines', name='Forecast'))
     
     fig.update_layout(title=f'Historical and Forecast of {yaxis_title}',
                       xaxis_title='Time',
                       yaxis_title=yaxis_title)
     
-    # Markierung für den Vorhersagehintergrund (rot)
+    # Vorhersage in rot
     fig.add_shape(
         type="rect",
         xref="x",
@@ -66,7 +82,7 @@ def neural_prophet_forecast(df, time_column, target_column, yaxis_title, periods
         line_width=0,
     )
     
-    # Markierung für den historischen Bereich (blau)
+    # Historische Daten in blau
     fig.add_shape(
         type="rect",
         xref="x",
@@ -81,7 +97,7 @@ def neural_prophet_forecast(df, time_column, target_column, yaxis_title, periods
         line_width=0,
     )
 
-    # Beschriftung für den historischen und Vorhersagebereich
+    # Beschriftung 
     fig.add_annotation(
         xref="paper",
         yref="paper",
@@ -94,7 +110,6 @@ def neural_prophet_forecast(df, time_column, target_column, yaxis_title, periods
             color="black"
         ),
     )
-
     fig.add_annotation(
         xref="paper",
         yref="paper",
@@ -107,15 +122,31 @@ def neural_prophet_forecast(df, time_column, target_column, yaxis_title, periods
             color="black"
         ),
     )
-    # Berechne den Startzeitpunkt für die Anzeige der letzten 72 Stunden
+
     last_72_hours = datetime.now() - timedelta(hours=72)
 
-    # Hier wird die x-Achse auf den Bereich der letzten 24 Stunden beschränkt
+    # x-Achse auf den Bereich der letzten 72 Stunden beschränkt
     fig.update_xaxes(range=[last_72_hours, forecast['ds'].iloc[-1]])
     return fig
 
-# Funktion zum Erstellen eines Diagramms
+
 def create_figure(df, x, y, title, y_title, y2=None, second_y_title=None):
+    """
+    Erstellt eine Plotly-Liniengrafik mit 1-2 Y-Achsen
+
+    Parameters:
+        df: DataFrame mit den Daten zur Darstellung
+        x (str): Spaltenname für die x-Achse
+        y (str): Spaltenname für die y-Achse
+        title (str): Titel der Grafik
+        y_title (str): Titel der y-Achse
+        y2 (str, optional): Spaltenname für die zweite y-Achse, Standard ist None
+        second_y_title (str, optional): Titel der zweiten y-Achse, Standard ist None
+
+    Returns:
+       Plotly-Objekt, das die erstellte Liniengrafik darstellt
+    """
+     
     fig = px.line(df, x=x, y=y, title=title)
     fig.update_traces(line=dict(color='blue'), yaxis='y', name=y, showlegend=True)
     fig.update_layout(
@@ -129,15 +160,33 @@ def create_figure(df, x, y, title, y_title, y2=None, second_y_title=None):
     fig.update_layout(annotations=[dict(xref='paper', yref='paper', x=0.5, y=0.0, showarrow=False, text="Hinweis: Ausreißer wurden entfernt und interpoliert")])
     return fig
 
-# Funktion zum Erstellen einer Korrelations-Heatmap
+
 def correlation_heatmap(df):
+    """
+    Erstellt eine Heatmap, die die Korrelationen zwischen den numerischen Variablen eines DataFrame zeigt
+
+    Parameters:
+        df: DataFrame mit den Daten zur Analyse
+
+    Returns:
+        Plotly-Objekt, das die Korrelations-Heatmap darstellt
+    """
     df = df.drop(columns="createdat").corr()
     fig = go.Figure(data=go.Heatmap(z=df, x=df.columns, y=df.columns, colorscale='RdBu_r'))
     fig.update_layout(title="Korrelationsmatrix", xaxis_title="Variablen", yaxis_title="Variablen")
     return fig
 
-# Funktion zum Abrufen der letzten Messung eines Sensors
+
 def get_last_measurement(sensor_id):
+    """
+    Funktion zum Abrufen der letzten Messung eines Sensors von der Sensebox-API
+
+    Parameters:
+        sensor_id (str): Die ID des Sensors
+
+    Returns:
+        float or None: Der Wert der letzten Messung des Sensors, oder None im Fehlerfall
+    """
     sensor_url = f"{sensebox.BASE_URL}/{sensebox.SENSEBOX_ID}/sensors/{sensor_id}"
     response = requests.get(sensor_url)
     if response.status_code == 200:
@@ -148,7 +197,14 @@ def get_last_measurement(sensor_id):
         print(f"Fehler bei der Abfrage des Sensors {sensor_id}: {response.status_code}")
         return None
 
+
 def create_last_measurement_data():
+    """
+    Erstellt einen DataFrame mit den letzten Messwerten der Sensoren
+
+    Returns:
+        DataFrame mit Spalten 'Sensor', 'Wert' und 'Einheit'
+    """
     data = {'Sensor': [], 'Wert': [], 'Einheit': []}
     for sensor_id, sensor_info in sensebox.SENSOR_INFO.items():
         last_value = get_last_measurement(sensor_id)
@@ -156,6 +212,5 @@ def create_last_measurement_data():
             data['Sensor'].append(sensor_info['name'])
             data['Wert'].append(last_value)
             data['Einheit'].append(sensor_info['unit'])
-    # DataFrame erstellen
     df = pd.DataFrame(data)
     return df
