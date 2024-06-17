@@ -2,12 +2,14 @@ import dash
 from dash import dcc, html, callback, Output, Input
 from functions import get_data_from_postgres, neural_prophet_forecast
 import multiprocessing
+import fetch
+import procesing
 
 # Dritte Seite des Dashboards: Forecasting-Modell
 
 dash.register_page(__name__, name='Modell')
 
-df = get_data_from_postgres()
+df = procesing.clean_data(fetch.fetch_sensebox_data())
 
 
 def process_forecast(df, x_col, y_col, title):
