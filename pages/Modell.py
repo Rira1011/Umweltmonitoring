@@ -9,9 +9,6 @@ import procesing
 
 dash.register_page(__name__, name='Modell')
 
-df = procesing.clean_data(fetch.fetch_sensebox_data())
-
-
 def process_forecast(df, x_col, y_col, title):
     """
     Erstellt eine Grafik für eine Vorhersage mit Neural Prophet
@@ -60,14 +57,14 @@ def update_layout(n):
     - list: Liste von dcc.Graph-Komponenten, die die aktualisierten Vorhersage-Grafiken darstellen.
     """
 
-    df = get_data_from_postgres()
+    df = procesing.clean_data(fetch.fetch_sensebox_data())
     
     # Vorhersageparameter
     forecasts = [
-        ('createdat', 'temperatur', 'Temperatur °C'),
-        ('createdat', 'relluftfeuchte', 'Rel. Luftfeuchte %'),
-        ('createdat', 'luftdruck', 'Luftdruck hPa'),
-        ('createdat', 'uvintensität', 'UV-Intensität μW/cm²')
+        ('createdAt', 'Temperatur', 'Temperatur °C'),
+        ('createdAt', 'rel. Luftfeuchte', 'Rel. Luftfeuchte %'),
+        ('createdAt', 'Luftdruck', 'Luftdruck hPa'),
+        ('createdAt', 'UV-Intensität', 'UV-Intensität μW/cm²')
     ]
     
     # Multiprocessing Pool für parallele Verarbeitung starten

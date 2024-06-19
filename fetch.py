@@ -46,20 +46,6 @@ def fetch_sensebox_data(from_date=None):
         DataFrame mit den abgerufenen Sensordaten
     """
 
-    # Verbindung zur Datenbank herstellen
-    conn = psycopg2.connect(
-            host=datenbank.HOSTNAME,
-            dbname=datenbank.DBNAME,
-            user=datenbank.USER,
-            password=datenbank.PASSWORD,
-            port=datenbank.PORT
-        )
-    cur = conn.cursor()
-    cur.execute("SELECT MAX(createdAt) FROM sensebox;")
-    latest_timestamp = cur.fetchone()[0]
-    cur.close()
-    conn.close()
-
     PARAMS = {
         'format': 'json',
         'download': 'true',

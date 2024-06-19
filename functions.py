@@ -20,8 +20,8 @@ def get_data_from_postgres():
     try:
         sql_query = "SELECT * FROM sensebox"
         df = pd.read_sql(sql_query, engine)
-        df = df.sort_values(by='createdat')
-        df = df.set_index('createdat').interpolate(method='time').reset_index()
+        df = df.sort_values(by='createdAt')
+        df = df.set_index('createdAt').interpolate(method='time').reset_index()
         return df
     except Exception as e:
         print("Fehler beim Laden der Daten aus der Datenbank:", e)
@@ -171,7 +171,7 @@ def correlation_heatmap(df):
     Returns:
         Plotly-Objekt, das die Korrelations-Heatmap darstellt
     """
-    df = df.drop(columns="createdat").corr()
+    df = df.drop(columns="createdAt").corr()
     fig = go.Figure(data=go.Heatmap(z=df, x=df.columns, y=df.columns, colorscale='RdBu_r'))
     fig.update_layout(title="Korrelationsmatrix", xaxis_title="Variablen", yaxis_title="Variablen")
     return fig

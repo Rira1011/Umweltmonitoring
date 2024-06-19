@@ -3,12 +3,13 @@ from dash import dcc, html, callback, Output, Input, dash_table
 import plotly.graph_objects as go
 from config import sensebox
 from functions import get_data_from_postgres, create_last_measurement_data
-
+import fetch
+import procesing
 # Erste Seite des Dashboards: Allgemeine Informationen und Tabelle mit aktuellen Daten
 
 dash.register_page(__name__, path="/", name="Allgemein")  # '/' bedeutet Home Page
 
-df = get_data_from_postgres()
+df = procesing.clean_data(fetch.fetch_sensebox_data())
 
 measurements = len(df)
 
