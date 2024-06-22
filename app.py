@@ -50,7 +50,7 @@ app.layout = dbc.Container(
     [   # Kopfzeile mit Titel
         dbc.Row(
             [
-                dbc.Cosl(
+                dbc.Col(
                     html.Div(
                         "Umweltmonitoring",
                         style={"fontSize": 50, "textAlign": "center"},
